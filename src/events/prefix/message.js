@@ -3,20 +3,32 @@ const PREFIX = "k!";
 
 module.exports = (client) => {
   client.on("messageCreate", (message) => {
-    console.log(`Received a message: ${message.content}`);
-    if (message.author.bot) return; // Ignore other bots.
-    if (!message.content.startsWith(PREFIX)) return; // If not the correct prefix, ignore.
+    const mentionedUsers = message.mentions.users;
+
+    let formattedContent = message.content;
+    mentionedUsers.forEach((user) => {
+      const mentionRegex = new RegExp(`<@!?${user.id}>`, "g");
+      formattedContent = formattedContent.replace(
+        mentionRegex,
+        `@${user.username}`
+      );
+    });
+
+    console.log(
+      `Received a message in channel #${message.channel.name} - ${message.author.username}: ${formattedContent}`
+    );
+
+    if (message.author.bot) return;
+    if (!message.content.startsWith(PREFIX)) return;
 
     const args = message.content.slice(PREFIX.length).trim().split(/ +/);
     const commandName = args.shift().toLowerCase();
 
     const command = client.commands.get(commandName);
 
-    if (!command) return; // If command doesn't exist, ignore.
+    if (!command) return;
 
-    const customPrefixCommand = client.commands.get(commandName);
-
-    if (customPrefixCommand) {
+    if (command) {
       try {
         customPrefixCommand.execute(message, args);
       } catch (error) {
